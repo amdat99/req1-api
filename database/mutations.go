@@ -85,7 +85,7 @@ func UpdateRow(db *sql.DB, tableName string,session utils.Session, data map[stri
     }
 
     values = append(values, id)
-    
+
     tableKeyName := tableName + "_" + session.Table_key
     query := fmt.Sprintf("UPDATE %s SET (%s) = (%s) WHERE id = $%d", tableKeyName, strings.Join(columns, ", "), strings.Join(placeholders, ", "), len(values))
     fmt.Println(query)
@@ -96,7 +96,6 @@ func UpdateRow(db *sql.DB, tableName string,session utils.Session, data map[stri
     return nil
 
 }
-
 
 //___Delete Row_____
 
