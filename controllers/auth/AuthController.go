@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"fmt"
 	"strconv"
+	"database/sql"
 )
 
 var validate = validator.New()
@@ -16,12 +17,17 @@ var validate = validator.New()
 //Register a new user, creates new user, a peosnal org for that user and a contact record for that org for the user
 func Register(c *fiber.Ctx) error {
 
+	fmt.Println("Registering user")
+
 	var body *authModel.UserType = new(authModel.UserType)
 	utils.ParseBody(c, body)
 	err := validate.Struct(body)
 	if err != nil {
+
 		return utils.ResError(c, err.Error(), 400)
 	}
+
+	fmt.Println("Registering user: ", body.Email)
 
 	//Hash password
 	body.Password, err = utils.HashPassword(body.Password)
@@ -34,80 +40,28 @@ func Register(c *fiber.Ctx) error {
 
 	var userQuery database.AddRowReturn = database.AddRowQuery("users", authModel.User(body))
 	var orgUserQuery database.AddRowReturn = database.AddRowQuery("org_user", authModel.OrgUser(body))
-	var results []interface{}
 
-	//Perform transaction with the two queries
-	tx, err := configs.DB["A"].Begin()
+	//Create transaction dor inserting user and org_user records for the main db
+	err = authModel.InsertUserTransaction(configs.DB["A"],userQuery, orgUserQuery)
 	if err != nil {
-		return utils.ResError(c, "Error registering", 500)
-	}
-	res , err := tx.Exec(userQuery.Query, userQuery.Values...)
-	if err != nil {
-		tx.Rollback()
+		fmt.Println("Error inserting user: ", err)
 		return utils.UniqueError(c, err.Error(), "Email/Username", "Error registering")
 	}
-	results = append(results, res)
-	res , err = tx.Exec(orgUserQuery.Query, orgUserQuery.Values...)
-	if err != nil {
-		tx.Rollback()
-		return utils.ResError(c, "Error registering", 500)
-	}	
-	results = append(results, res)
-	err = tx.Commit()
 
-	if err != nil {
-		return utils.ResError(c, "Error", 500)
-	}
 	//Create transaction with org db (currently is A, but will be different if new org data sjould be stored in a different db)
-	tx2, err := configs.DB["A"].Begin()
+	err = authModel.InsetContactOrgIdTransaction(configs.DB[body.Db],body);
 	if err != nil {
-		return utils.ResError(c, "Error registering", 500)
-	}
-
-	//Insert org_id/private_id into org_ids table. This will be used as the primary key for the org_id field for the org data. Having it in a seperate table will facilitate on delete cascade for the speciic database the org data is stored in.
-	res, err = tx2.Exec("INSERT INTO org_ids (org_id) VALUES ($1)", body.Private_id)
-	if err != nil {
-		tx2.Rollback()
-		deleteUserOnFail(c, body.Email)  //Delete user and org_user records if query fails
-		return utils.ResError(c, "Error registering", 500)
-	}
-	results = append(results, res)
-
-	//Create a contact record for the user for the specific org
-	var contactLabel string = body.First_name + " " + body.Last_name + " (" + body.Username + ")"
-	res, err = tx2.Exec("INSERT INTO contact_"+body.Table_key+" (org_id, email, first_name, last_name, username, label, internal) VALUES ($1, $2, $3, $4, $5, $6, $7)", body.Private_id, body.Email, body.First_name, body.Last_name, body.Username, contactLabel,true)
-	if err != nil {
-		tx2.Rollback()
-		deleteUserOnFail(c, body.Email)
-		return utils.ResError(c, "Error registering", 500)
-	}
-	results = append(results, res)
-	err = tx2.Commit()
-	if err != nil {
-		deleteUserOnFail(c, body.Email) //Delete user and org_user records if query fails
+		fmt.Println("Error inserting user: ", err)
+		err := deleteUserOnFail(configs.DB["A"], c, body.Email)
+		if err != nil {
+			return  nil
+		}
 		return utils.ResError(c, "Error registering", 500)
 	}
 
 	utils.ResSuccess(c)
-
 	return nil
 }
-
-//Delete user and org_user records if query fails
-func deleteUserOnFail(c *fiber.Ctx, email string) error {
-	_, err := configs.DB["A"].Exec("DELETE FROM users WHERE id = $1", email)
-	if err != nil {
-		fmt.Println("Error deleting user on fail: ", err)
-		return utils.ResError(c, "Error registering", 500)
-	}
-	_, err = configs.DB["A"].Exec("DELETE FROM org_user WHERE email = $1", email)
-	if err != nil {
-		fmt.Println("Error deleting org_user on fail: ", err)
-		return utils.ResError(c, "Error registering", 500)
-	}
-	return nil
-}
-
 
 //Login a user, returns user data, and the orgs the user is a part of
 func Login(c *fiber.Ctx) error {
@@ -127,17 +81,13 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	if err := utils.ComparePassword(body.Password, user.Password); err != nil {
-		//fmt.Println("Error: ", err)
 		return utils.ResError(c, "Invalid credentials", 400)
 	}
-
-	//Get org users for user
- 	var results []map[string]interface{}
-	 	err = database.Select(configs.DB["A"], "org_user", []string{"name","id","org_name"},&results,c, 100, map[string]interface{}{"email": body.Email}, map[string]interface{}{})
+	//Get org users record for user
+	orgs,err := database.SelectRows(configs.DB["A"], "org_user", c, []string{"name","id","org_name"}, map[string]interface{}{"email": user.Email},100)
 	 	if err != nil {
 	 		return utils.ResError(c, err.Error(), 400)
  	}	
-
 	//Generate session token
 	token,err := utils.GenerateSession(c, user.Id)
 	if err != nil {
@@ -151,6 +101,7 @@ func Login(c *fiber.Ctx) error {
 		"id":    user.Id,
 		"private_id": user.Private_id,
 		"token": token,
+		
 	})
 	if err != nil {
 		return utils.ResError(c, "Error Logging in", 500)
@@ -166,18 +117,33 @@ func Login(c *fiber.Ctx) error {
 	//Delete password from user
 	user.Password = ""
 	user.Private_id = ""
+ 	user.Orgs = orgs
 
 	//Return user object
-	return utils.ResJSON(c, map[string]interface{}{
-		"user": user,
-		"orgs": results,
-	})
+	return utils.ResJSON(c,user)
 }
 
-	//EnterOrg, quueries the specific org the user wants to enter, updates the user session with the org_id,role, db, table_key for the org
-	func EnterOrg(c *fiber.Ctx, session utils.Session) error {
+//Logout a user, deletes the session from redis
+func Logout(c *fiber.Ctx) error {
 
-		id, err := strconv.Atoi(c.Query("id"))
+ 	cookie := c.Cookies("Req1S")
+    if cookie == "" {
+        return utils.ResError(c, "Invalid session", 400)
+    }
+
+	err := configs.Redis.Del(c.Context(), cookie).Err()
+	if err != nil {
+		return utils.ResError(c, "Error logging out", 500)
+	}
+	c.Cookies(cookie, "")
+	utils.ResSuccess(c)
+	return nil
+}
+
+//EnterOrg, quueries the specific org the user wants to enter, updates the user session with the org_id,role, db, table_key for the org
+func EnterOrg(c *fiber.Ctx, session utils.Session) error {
+
+	id, err := strconv.Atoi(c.Query("id"))
     	if err != nil {
 			return utils.ResError(c, "Invalid id", 400)
 		}
@@ -229,8 +195,21 @@ func Login(c *fiber.Ctx) error {
 			return utils.ResError(c, "Error entering org", 500)
 		}
 
-		return utils.ResSuccess(c)
+		return utils.ResSuccess(c)	
+	}	
+
+
+	//Delete user and org_user records if query fails
+func deleteUserOnFail(db *sql.DB, c *fiber.Ctx, email string) error {
+	_, err := db.Exec("DELETE FROM users WHERE email = $1", email)
+	if err != nil {
+		fmt.Println("Error deleting user on fail: ", err)
+		return utils.ResError(c, "Error registering", 500)
 	}
-
-
-
+	_, err = db.Exec("DELETE FROM org_user WHERE email = $1", email)
+	if err != nil {
+		fmt.Println("Error deleting org_user on fail: ", err)
+		return utils.ResError(c, "Error registering", 500)
+	}
+	return nil
+}

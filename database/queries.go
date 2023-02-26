@@ -23,6 +23,11 @@ type PaginateType struct {
 //func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session Session, conditions map[string]interface{},)  (PaginateType, error) {
 func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session utils.Session)  (PaginateType, error) {
 
+    fmt.Println("session",session)
+
+    if(session.Org_id == "") {
+        return PaginateType{}, fmt.Errorf("No org_id")
+    }
 
     var dest []map[string]interface{} = make([]map[string]interface{}, 0)
     var whereClause string = "WHERE org_id = '"+session.Org_id+"'"    
@@ -41,16 +46,30 @@ func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session
 
     //Calculate offset (Offest and limit are int type checked so no need to paramaterise)
     offset := (page - 1) * limit
+
+
+    fmt.Println("limit",limit)
     limitClause := fmt.Sprintf("LIMIT %d OFFSET %d", limit, offset)
+
+    //Order by clause
+
+    orderClause := fmt.Sprintf("ORDER BY id asc")
     
 	//Pagination query
-    tableKeyName := tableName + "_" + session.Table_key
-    query := fmt.Sprintf("SELECT %s FROM %s %s %s ; SELECT COUNT(*) FROM %s %s" , strings.Join(fields, ","),tableKeyName,  whereClause, limitClause, tableKeyName, whereClause)
+    tableKeyName := tableName + "_" + session.Table_key  //Order by id
+    query := fmt.Sprintf("SELECT %s FROM %s %s %s %s ; SELECT COUNT(*) FROM %s %s" , strings.Join(fields, ","),tableKeyName,  whereClause,orderClause, limitClause , tableKeyName, whereClause )
+    fmt.Println("query",query)
     rows, err := db.Query(query)
     if err != nil {
-        return PaginateType{}, err
+        fmt.Println(err)
+        // return PaginateType{}, err
     }
     defer rows.Close()
+
+    fmt.Println("runs...")
+
+
+
 
     //Get columns from rows
     columns, err := rows.Columns()
@@ -58,28 +77,33 @@ func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session
         return PaginateType{}, err
     }
 
+    fmt.Println("columns",columns)
+
 	//Create slice of interfaces for values
     values := make([]interface{}, len(columns))
 
 	//Create slice of interface for pointers to values
     valuePtrs := make([]interface{}, len(columns))
     
+
+    fmt.Println("values",values)
+    fmt.Println("valuePtrs",valuePtrs)
+
 	//Loop through columns and assign pointers to values
     for i := range columns {
         valuePtrs[i] = &values[i]
     }
 
-	//Loop through rows for 1st result set
+    //Loop through first result set
     for rows.Next() {
-		//Scan rows into values
+        //Scan rows into values
         err = rows.Scan(valuePtrs...)
         if err != nil {
             return PaginateType{}, err
         }
 
         row := make(map[string]interface{})
-
-		//Loop through columns 
+        //Loop through columns
         for i, col := range columns {
             val := values[i]
             if val == nil {
@@ -87,20 +111,22 @@ func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session
             } else {
                 //Check if value is is json/jsonb and convert to json arr
                 if _, ok := val.([]byte); ok {
-                    
+                
                 jsonArr := make([]interface{}, 0)
                     err := json.Unmarshal(val.([]byte), &jsonArr)
                     if err != nil {
-                        return PaginateType{}, err
+                     return PaginateType{}, err
+                                fmt.Println(err)
                     }
                 row[col] = jsonArr
 
                 } else {
                     row[col] = val
                 }
+
+            }
         }
         dest = append(dest, row)
-    }
     }
 
     //Get total count from 2nd result set
@@ -115,6 +141,7 @@ func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session
     if err != nil {
         return PaginateType{}, err
     }
+
 
     //return data
     return PaginateType{
@@ -170,7 +197,7 @@ func Single(db *sql.DB, tableName string, fields[]string, c *fiber.Ctx,session u
                 jsonArr := make([]interface{}, 0)
                     err := json.Unmarshal(val.([]byte), &jsonArr)
                     if err != nil {
-                        return result, err
+                    fmt.Println(err)
                     }
                 result[col] = jsonArr
 
@@ -202,7 +229,7 @@ func Search(db *sql.DB, tableName string, c *fiber.Ctx,session utils.Session ,fi
 	}
 
 	var tableKeyName string = tableName + "_" + session.Table_key
-	err := Select(db, tableKeyName, fields, &results, c, 120, map[string]interface{}{"org_id": session.Org_id}, map[string]interface{}{"label": query})
+	err := Select(db, tableKeyName, fields, &results, c, 120, map[string]interface{}{"org_id": session.Org_id}, map[string]interface{}{"label": query},utils.EmptyIntfMap)
 	if err != nil {
 		return results, err
 	}
@@ -220,7 +247,7 @@ func MultiSearch(db *sql.DB, tableName string, c *fiber.Ctx,session utils.Sessio
 	//Add org_id to equal conditions
 	equalConditions["org_id"] = session.Org_id
 
-	err := Select(db, tableKeyName, fields, &results, c, 120, equalConditions, conditions.Like)
+	err := Select(db, tableKeyName, fields, &results, c, 120, equalConditions, conditions.Like, conditions.In)
 	if err != nil {
 		return results, err
 	}
@@ -228,8 +255,20 @@ func MultiSearch(db *sql.DB, tableName string, c *fiber.Ctx,session utils.Sessio
 }
 
 
-//___Get Row With optional where and like conditions
-func Select(db *sql.DB, tableName string, fields[]string, dest *[]map[string]interface{},c *fiber.Ctx, limit int, conditions map[string]interface{}, likeConditions map[string]interface{} ) error {
+
+//SlectRows
+func SelectRows(db *sql.DB, tableName string, c *fiber.Ctx, fields[]string, conditions map[string]interface{},limit int ) ([]map[string]interface{}, error) {
+    var results []map[string]interface{}
+    err := Select(db, tableName, fields, &results, c, limit, conditions, utils.EmptyIntfMap, utils.EmptyIntfMap)
+    if err != nil {
+        return results, err
+    }
+    return results, nil
+}
+
+
+//___Get Rows With optional where, in and like conditions
+func Select(db *sql.DB, tableName string, fields[]string, dest *[]map[string]interface{},c *fiber.Ctx, limit int, conditions map[string]interface{}, likeConditions map[string]interface{}, inConditions map[string]interface{}  ) error {
 
     //var whereClause string = "WHERE org_id = 1"
 	var whereClause string = ""
@@ -248,7 +287,7 @@ func Select(db *sql.DB, tableName string, fields[]string, dest *[]map[string]int
     }
 }
 
-	//Add query conditions
+	//Like conditions
 	if len(likeConditions) > 0 {
 			for columnName, value := range likeConditions {
 				if whereClause != "" {
@@ -262,8 +301,27 @@ func Select(db *sql.DB, tableName string, fields[]string, dest *[]map[string]int
 			}
 		}
 
+    //Where in conditions
+    if len(inConditions) > 0 {
+        for columnName, value := range inConditions {
+            if whereClause != "" {
+                whereClause += " AND "
+            } else {
+                whereClause = "WHERE"
+            }
+            //join values with comma
+            inValues := strings.Join(value.([]string), ",")
+            whereClause += fmt.Sprintf("%s IN ($%d)", columnName, len(args)+1)
+            args = append(args, inValues)
+        }
+    }
 
-    query := fmt.Sprintf("SELECT %s FROM %s %s LIMIT %d", strings.Join(fields, ","), tableName, whereClause, limit)
+
+    //Add order by id asc
+
+    orderBy := "ORDER BY id ASC"
+
+    query := fmt.Sprintf("SELECT %s FROM %s %s %s LIMIT %d", strings.Join(fields, ","), tableName, whereClause,orderBy, limit)
     rows, err := db.Query(query, args...)
     if err != nil {
         return err
@@ -298,7 +356,7 @@ func Select(db *sql.DB, tableName string, fields[]string, dest *[]map[string]int
                 jsonArr := make([]interface{}, 0)
                     err := json.Unmarshal(val.([]byte), &jsonArr)
                     if err != nil {
-                        return err
+                        fmt.Println(err)
                     }
                 row[col] = jsonArr
 

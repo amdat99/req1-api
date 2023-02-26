@@ -3,7 +3,7 @@ package migrations
 
 
 var OrgUserUp string = 
-  `CREATE TABLE "org-user" (
+  `CREATE TABLE "org_user" (
   "id" SERIAL PRIMARY KEY,
   "name" VARCHAR(50) NOT NULL DEFAULT '',
   "email" VARCHAR(300) NOT NULL REFERENCES "users" ("email") ON DELETE CASCADE,
@@ -18,7 +18,7 @@ var OrgUserUp string =
   "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );`
 
-var OrgUserDown string = `DROP TABLE "org-user";`
+var OrgUserDown string = `DROP TABLE "org_user";`
 
 
 

@@ -66,6 +66,11 @@ func GetSession(c *fiber.Ctx) (Session, error) {
 		return sessionStruct, err
 	}
 
+    //check if there is no session
+    if val == "" {
+        return sessionStruct, NewErr("No session")
+    }
+
 	//Unmarshal session
 	err = json.Unmarshal([]byte(val), &sessionStruct)
 	if err != nil {

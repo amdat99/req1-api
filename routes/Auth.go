@@ -15,13 +15,15 @@ var route = utils.Router(c,false)
 
 		case "POST_login":
 			return authcontroller.Login(c)
+
+		case "POST_logout":
+			return authcontroller.Logout(c)
 			
 	default:
 		return utils.ResRouteError(c,route.Name)
 	}
 
 }	
-
 
 func Org(c *fiber.Ctx) error {
 

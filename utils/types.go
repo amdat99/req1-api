@@ -14,9 +14,14 @@ type AddRowData struct {
     Id string `json:"id"`
 }
 
+type AddRowsData struct {
+    Ids []string `json:"ids"`
+}
+
 type MultiSearchType struct {
 	Like map[string]interface{} `json:"like"`
 	Equal map[string]interface{} `json:"equal"`
+    In map[string]interface{} `json:"in"`
 }
 
 type Session struct {

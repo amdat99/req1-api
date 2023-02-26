@@ -6,6 +6,11 @@ var Migrations []string = []string{
 	OrganizationUp,
 	OrgUserUp,
 	OrgIdsUp,
+	ContactUp,
+	GroupUp,
+	GroupUserUp,
+	RequirementUp,
+	SubmissionUp,
 	
 }
 
@@ -14,4 +19,9 @@ var Rollback []string = []string{
 	OrganisationDown,
 	OrgUserDown,
 	OrgIdsDown,
+	ContactDown,
+	GroupDown,
+	GroupUserDown,
+	RequirementDown,
+	SubmissionDown,
 }

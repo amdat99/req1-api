@@ -19,6 +19,9 @@ var route = utils.Router(c,true)
 		case "POST_add":
 			return reqController.Add(c,route.Session)
 
+		case "POST_add-multiple":
+			return reqController.AddMultiple(c,route.Session)
+
 		case "PUT_update":
 			return reqController.Update(c,route.Session)
 

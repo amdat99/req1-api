@@ -17,7 +17,7 @@ func All(c *fiber.Ctx, session utils.Session) error {
 
 	reqData,err := database.Paginate(configs.DB[session.Db], "requirement", requirementModel.Fields,c,session)
 	if err != nil {
-		//fmt.Println(err)
+		fmt.Println(err)
 		return utils.ResError(c, "Error getting requirements", 500)
 	}
 	return utils.ResJSON(c, reqData)
@@ -48,10 +48,30 @@ func Add(c *fiber.Ctx, session utils.Session) error {
 
 	requirementData,err := database.AddRow(configs.DB[session.Db], "requirement", session, requirementModel.Requirement(body,session))
 	if err != nil {
+		fmt.Println(err)
 		return utils.ResError(c, "Error adding requirement", 500)
 	}
 	return utils.ResAddSuccess(c, requirementData)
 }
+
+//Add multiple requirements
+func AddMultiple(c *fiber.Ctx, session utils.Session) error {
+
+	var body *requirementModel.MultiRequirementType = new(requirementModel.MultiRequirementType)
+	utils.ParseBody(c, body)
+	err := validate.Struct(body)
+	if err != nil {
+		return utils.ResError(c, err.Error(), 400)
+	}
+
+	multiReqData,err := database.MultiAddRow(configs.DB[session.Db], "requirement", session, requirementModel.MultiRequirement(body,session))
+	if err != nil {
+		fmt.Println(err)
+		return utils.ResError(c, "Error adding requirements", 500)
+	}
+	return utils.ResMultiAddSuccess(c, multiReqData)
+}
+
 
 //Update a requirement
 func Update(c *fiber.Ctx, session utils.Session) error {
@@ -62,11 +82,18 @@ func Update(c *fiber.Ctx, session utils.Session) error {
 	if err != nil {
 		return utils.ResError(c, err.Error(), 400)
 	}
-
-	updateErr := database.UpdateRow(configs.DB[session.Db], "requirement", session, requirementModel.Requirement(body,session),body.Id)
-	if updateErr != nil {
+	
+	_,err2:= configs.DB[session.Db].Query(fmt.Sprintf("UPDATE requirement_%s SET label=$1, type=$2, views=$3, additional_data=$4 WHERE id=$5 AND org_id=$6", session.Table_key), body.Label, body.Type, body.Views, body.Additional_data, body.Id, session.Org_id)
+	if err2 != nil {
+		fmt.Println(err2)
 		return utils.ResError(c, "Error updating requirement", 500)
 	}
+
+	// updateErr := database.UpdateRow(configs.DB[session.Db], "requirement", session, requirementModel.Requirement(body,session),body.Id)
+	// if updateErr != nil {
+	// 	fmt.Println(updateErr)
+	// 	return utils.ResError(c, "Error updating requirement", 500)
+	// }
 	return utils.ResSuccess(c)
 }
 

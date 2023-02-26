@@ -5,6 +5,7 @@ go 1.20
 require github.com/gofiber/fiber/v2 v2.42.0
 
 require (
+	github.com/PullRequestInc/go-gpt3 v1.1.11 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
