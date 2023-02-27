@@ -8,19 +8,8 @@ import (
 	"net/smtp"
 	"github.com/gofiber/fiber/v2"
 	"os"
+	"github.com/joho/godotenv"
 )
-
-
-
-
-const (
-	host     = os.Getenv("DB_HOST")
-	port     = 5432
-	user     = os.Getenv("DB_USERNAME")
-	password = os.Getenv("DB_PASSWORD")
-	dbA   = os.Getenv("DB_DATABASE")
-)
-
 
 //DB is a map of databases
 var DB map[string]*sql.DB = make(map[string]*sql.DB)
@@ -31,16 +20,18 @@ var MailAuth =  smtp.PlainAuth("", "sender@example.com", "password", "smtp.examp
 
 
 func Init() {
-
-	//Connect to the database A
-	DbA, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s "+ "password=%s dbname=%s sslmode=disable", host, port, user, password, dbA))
+err := godotenv.Load(".env")
 	if err != nil {
 		panic(err)
 	}
+	//Connect to the database A
+	fmt.Println("Connecting to the database...", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_DATABASE"))
+	var err2 error
+	DB["A"] ,err2 = sql.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s "+ "password=%s dbname=%s sslmode=disable", os.Getenv("DB_HOST"), 5432, os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_DATABASE")))
+	if err2 != nil {
+		panic(err2)
+	}
 	//Add database A to the map of databases
-	DB["A"] = DbA
-	DB["A"].SetMaxOpenConns(10)
-
 
 	Redis = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",

@@ -17,7 +17,6 @@ var validate = validator.New()
 //Register a new user, creates new user, a peosnal org for that user and a contact record for that org for the user
 func Register(c *fiber.Ctx) error {
 
-	fmt.Println("Registering user")
 
 	var body *authModel.UserType = new(authModel.UserType)
 	utils.ParseBody(c, body)
