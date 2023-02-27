@@ -11,6 +11,7 @@ var Migrations []string = []string{
 	GroupUserUp,
 	RequirementUp,
 	SubmissionUp,
+	WorkflowUp,
 	
 }
 
@@ -24,4 +25,5 @@ var Rollback []string = []string{
 	GroupUserDown,
 	RequirementDown,
 	SubmissionDown,
+	WorkflowDown,
 }

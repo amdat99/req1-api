@@ -26,7 +26,7 @@ func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session
     fmt.Println("session",session)
 
     if(session.Org_id == "") {
-        return PaginateType{}, fmt.Errorf("No org_id")
+        return PaginateType{}, utils.NewErr("No org_id found")
     }
 
     var dest []map[string]interface{} = make([]map[string]interface{}, 0)
@@ -61,6 +61,7 @@ func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session
     fmt.Println("query",query)
     rows, err := db.Query(query)
     if err != nil {
+        
         fmt.Println(err)
         // return PaginateType{}, err
     }

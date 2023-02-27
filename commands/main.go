@@ -96,8 +96,13 @@ func rollbackTable() error {
 		return err
 	}
 
-	var rollbackQueries []string = migrations.Rollback
+	rollbackQueries :=  migrations.Rollback
+	
 	ReverseSlice(rollbackQueries)
+
+	
+
+	fmt.Println(rollbackQueries)
 
 	var queries string = ""
 

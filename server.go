@@ -64,6 +64,7 @@ func main() {
     app.Use("/auth", routes.Auth , timeout.New(h, 2*time.Second))
     app.Use("/org", routes.Org, timeout.New(h, 2*time.Second))
     app.Use("/requirement", routes.Requirement, timeout.New(h, 2*time.Second))
+    app.Use("/workflow", routes.Workflow, timeout.New(h, 2*time.Second))
     app.Use("/generation", routes.Generation, timeout.New(h, 2*time.Second))
     
     

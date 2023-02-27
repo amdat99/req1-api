@@ -7,14 +7,18 @@ import (
 	_ "github.com/lib/pq"
 	"net/smtp"
 	"github.com/gofiber/fiber/v2"
+	"os"
 )
 
+
+
+
 const (
-	host     = "localhost"
+	host     = os.Getenv("DB_HOST")
 	port     = 5432
-	user     = "postgres"
-	password = "password"
-	dbA   = "req1"
+	user     = os.Getenv("DB_USERNAME")
+	password = os.Getenv("DB_PASSWORD")
+	dbA   = os.Getenv("DB_DATABASE")
 )
 
 
