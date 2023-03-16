@@ -12,6 +12,7 @@ type WorkflowType struct {
 	Edges string `json:"edges`
 	Additional_data string `json:"additional_data`
 	Id int64 `json:"id"`
+	Variables string `json:"variables`
 }
 
 type MultiWorkflowType struct {
@@ -27,6 +28,7 @@ func Workflow(body *WorkflowType, session utils.Session ) map[string]interface{}
 		"edges": utils.JsonArr(body.Edges),
 		"nodes": utils.JsonArr(body.Nodes),
 		"additional_data": utils.JsonArr(body.Additional_data),
+		"variables": utils.JsonArr(body.Variables),
 	}
 
 	return model
@@ -43,5 +45,5 @@ func MultiWorkflow(body *MultiWorkflowType, session utils.Session ) []map[string
 }
 
 //Fields to query
-var Fields = []string{"id","label","type","created_by","nodes","edges","additional_data","view_user_ids","view_team_ids","edit_user_ids","edit_team_ids","delete_user_ids","delete_team_ids","workflow_ids","created_at","updated_at"}
+var Fields = []string{"id","label","type","created_by","nodes","edges","additional_data","view_user_ids","view_team_ids","edit_user_ids","edit_team_ids","delete_user_ids","delete_team_ids","workflow_ids","created_at","updated_at","variables",}
 

@@ -44,6 +44,7 @@ func MultiRequirement(body *MultiRequirementType, session utils.Session ) []map[
 	return data
 }
 
+
 //Fields to query
 var Fields = []string{"id","label","type","created_by","views","additional_data","view_user_ids","view_team_ids","edit_user_ids","edit_team_ids","delete_user_ids","delete_team_ids","workflow_ids","created_at","updated_at"}
 

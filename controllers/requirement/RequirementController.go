@@ -83,11 +83,12 @@ func Update(c *fiber.Ctx, session utils.Session) error {
 		return utils.ResError(c, err.Error(), 400)
 	}
 	
-	_,err2:= configs.DB[session.Db].Query(fmt.Sprintf("UPDATE requirement_%s SET label=$1, type=$2, views=$3, additional_data=$4 WHERE id=$5 AND org_id=$6", session.Table_key), body.Label, body.Type, body.Views, body.Additional_data, body.Id, session.Org_id)
+	update,err2:= configs.DB[session.Db].Query(fmt.Sprintf("UPDATE requirement_%s SET label=$1, type=$2, views=$3, additional_data=$4 WHERE id=$5 AND org_id=$6", session.Table_key), body.Label, body.Type, body.Views, body.Additional_data, body.Id, session.Org_id)
 	if err2 != nil {
 		fmt.Println(err2)
 		return utils.ResError(c, "Error updating requirement", 500)
 	}
+	defer update.Close()
 
 	// updateErr := database.UpdateRow(configs.DB[session.Db], "requirement", session, requirementModel.Requirement(body,session),body.Id)
 	// if updateErr != nil {

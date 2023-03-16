@@ -2,13 +2,13 @@ package migrations
 
 var SubmissionUp string = 
 
-`CREATE TABLE submissions_1 (
+`CREATE TABLE submission_1 (
   id SERIAL PRIMARY KEY,
   org_id VARCHAR(50) NOT NULL REFERENCES org_ids(org_id) ON DELETE CASCADE,
   requirement_id BIGINT NOT NULL REFERENCES requirement_1(id) ON DELETE CASCADE,
+  view_id varchar(30),
   model JSONB DEFAULT '{}'::JSONB,
   label VARCHAR(90),
-  value VARCHAR(90),
   uploads JSONB DEFAULT '[]'::JSONB,
   created_by BIGINT REFERENCES contact_1(id),
   has_uploads BOOLEAN DEFAULT false,
@@ -31,4 +31,4 @@ var SubmissionUp string =
 );
 `
 
-var SubmissionDown string = `DROP TABLE submissions_1;`
+var SubmissionDown string = `DROP TABLE submission_1;`

@@ -65,7 +65,9 @@ func main() {
     app.Use("/org", routes.Org, timeout.New(h, 2*time.Second))
     app.Use("/requirement", routes.Requirement, timeout.New(h, 2*time.Second))
     app.Use("/workflow", routes.Workflow, timeout.New(h, 2*time.Second))
-    app.Use("/generation", routes.Generation, timeout.New(h, 2*time.Second))
+    app.Use("/variable", routes.Variable, timeout.New(h, 2*time.Second))
+    app.Use("/submission", routes.Submission, timeout.New(h, 2*time.Second))
+    //app.Use("/generation", routes.Generation, timeout.New(h, 2*time.Second))
     
     
     log.Fatal(app.Listen(":5000"))

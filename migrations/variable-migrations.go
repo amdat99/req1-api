@@ -1,15 +1,12 @@
 package migrations
 
-var WorkflowUp string = 
-`CREATE TABLE workflow_1 (
+var VariableUp string = 
+`CREATE TABLE variable_1 (
     id SERIAL PRIMARY KEY,
     org_id VARCHAR(50) NOT NULL REFERENCES org_ids(org_id) ON DELETE CASCADE,
-    label VARCHAR(90) NOT NULL,
-    type VARCHAR(18) NOT NULL,
-    nodes JSONB DEFAULT '[{"id":"1","type":"custom","data":{"name":"Start here","emoji":"👋","noParent":true},"position":{"x":0,"y":50}}]'::JSONB,
-    edges JSONB DEFAULT '[]'::JSONB,
-    additional_data JSONB DEFAULT '[]'::JSONB,
-    variables JSONB DEFAULT '[]'::JSONB,
+    label VARCHAR(90),
+	value VARCHAR(500),
+	encrypted BOOLEAN DEFAULT FALSE,
     
 	created_by BIGINT REFERENCES contact_1(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -25,4 +22,4 @@ var WorkflowUp string =
 );
 `
 
-var WorkflowDown string = `DROP TABLE workflow_1;`
+var VariableDown string = `DROP TABLE variable_1;`

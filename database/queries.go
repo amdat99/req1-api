@@ -61,16 +61,10 @@ func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session
     fmt.Println("query",query)
     rows, err := db.Query(query)
     if err != nil {
-        
         fmt.Println(err)
-        // return PaginateType{}, err
+        return PaginateType{}, err
     }
     defer rows.Close()
-
-    fmt.Println("runs...")
-
-
-
 
     //Get columns from rows
     columns, err := rows.Columns()
@@ -85,10 +79,6 @@ func Paginate(db *sql.DB, tableName string, fields[]string,c *fiber.Ctx, session
 
 	//Create slice of interface for pointers to values
     valuePtrs := make([]interface{}, len(columns))
-    
-
-    fmt.Println("values",values)
-    fmt.Println("valuePtrs",valuePtrs)
 
 	//Loop through columns and assign pointers to values
     for i := range columns {
@@ -168,7 +158,6 @@ func Single(db *sql.DB, tableName string, fields[]string, c *fiber.Ctx,session u
     if err != nil {
         return result, err
     }
-    
     defer row.Close()
     columns, err := row.Columns()
     if err != nil {
@@ -225,15 +214,16 @@ func Search(db *sql.DB, tableName string, c *fiber.Ctx,session utils.Session ,fi
  	var results []map[string]interface{}
 	//Get search query
 	query := c.Query("query", "")
-	if query == "" {
-		return results, utils.NewErr("Query is required")
-	}
+	// if query == "" {
+	// 	return results, utils.NewErr("Query is required")
+	// }
 
 	var tableKeyName string = tableName + "_" + session.Table_key
 	err := Select(db, tableKeyName, fields, &results, c, 120, map[string]interface{}{"org_id": session.Org_id}, map[string]interface{}{"label": query},utils.EmptyIntfMap)
 	if err != nil {
 		return results, err
 	}
+
 	return results, nil
 }
 

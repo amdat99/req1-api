@@ -12,6 +12,9 @@ var Migrations []string = []string{
 	RequirementUp,
 	SubmissionUp,
 	WorkflowUp,
+	VariableUp,
+	IntegrationUp,
+	ChannelUp,
 	
 }
 
@@ -26,4 +29,7 @@ var Rollback []string = []string{
 	RequirementDown,
 	SubmissionDown,
 	WorkflowDown,
+	VariableDown,
+	IntegrationDown,
+	ChannelDown,
 }

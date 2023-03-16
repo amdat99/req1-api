@@ -15,6 +15,7 @@ var UsersUp string =
   "image" VARCHAR(255),
   "email_verified_at" TIMESTAMP,
   "password" VARCHAR(100) NOT NULL,
+  integration_key VARCHAR(10) NOT NULL,
   "storage_limit" INTEGER DEFAULT 524288000,
   "user_storage_limit" INTEGER DEFAULT 524288000,
   "uploads" JSON,
