@@ -47,7 +47,7 @@ func User(u *UserType) map[string]interface{} {
 		"password":   u.Password,
 		"private_id": u.Private_id,
 		"username":   u.Username,
-		"integration_key": "1"
+		"integration_key": "1",
 	}
 }
 

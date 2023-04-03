@@ -25,7 +25,7 @@ err := godotenv.Load(".env")
 		panic(err)
 	}
 	//Connect to the database A
-	fmt.Println("Connecting to the database...", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_DATABASE"))
+	fmt.Println("Connecting to the database A...")
 	var err2 error
 	DB["A"] ,err2 = sql.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s "+ "password=%s dbname=%s sslmode=disable", os.Getenv("DB_HOST"), 5432, os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_DATABASE")))
 	if err2 != nil {

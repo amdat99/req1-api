@@ -18,7 +18,7 @@ func Gen(c *fiber.Ctx, session utils.Session) error {
 
 	if(session.Org_id == ""){ return utils.ResError(c, "You must be logged in to use this feature", 401) }
 
-	apiKey := "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"
+	apiKey := ""
 
 	ctx := context.Background()
 	client := gpt3.NewClient(apiKey)

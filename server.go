@@ -67,6 +67,7 @@ func main() {
     app.Use("/workflow", routes.Workflow, timeout.New(h, 2*time.Second))
     app.Use("/variable", routes.Variable, timeout.New(h, 2*time.Second))
     app.Use("/submission", routes.Submission, timeout.New(h, 2*time.Second))
+    app.Use("/integration", routes.Integration, timeout.New(h, 2*time.Second))
     //app.Use("/generation", routes.Generation, timeout.New(h, 2*time.Second))
     
     
